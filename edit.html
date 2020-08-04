@@ -1,0 +1,127 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Hero - Admin</title>
+    <link rel="stylesheet" href="./css/bootstrap.css">
+    <script src="./lib/jquery-1.12.2.js"></script>
+    <script src="./lib/template-web.js"></script>
+    <!-- 定义模板 -->
+    <script id="renderTemplate" type="text/html">
+        <table class="table table-hover">
+            <tbody>
+                <tr>
+                    <td>姓名：</td>
+                    <td><input id="heroName" value="{{$data.name}}" type="text" name="name"></td>
+                </tr>
+                <tr>
+                    <td>性别：</td>
+                    <td>
+                        <input id="man" name="gender" value="男" type="radio" {{$data.gender==='男'?checked:''}}>
+                        <label for="man">男</label>
+                        <input name="gender" value="女" type="radio" id="female" {{$data.gender==='女'?checked:''}}>
+                        <label for="female ">女</label>
+                    </td>
+                </tr>
+                <tr>
+                    <td>头像：</td>
+                    <td>
+                        <img src="/images/default.png" alt="" id="photo" width="100"
+                            style='border: 1px solid #ccc;margin-bottom: 5px;'>
+                        <input type="file" id="fileImg" onchange="addFile()">
+                    </td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td><input onclick="renew()" type="button" id="sub" value="保存"></td>
+                </tr>
+            </tbody>
+        </table>
+    </script>
+
+    <script>
+        //获取主页的url
+        // console.log(window.location.href);//效果同下
+        console.log(window.location.search); //?id=修改英雄的id
+        const id = window.location.search.split('=')[1];
+        console.log(id);
+        //请求发送
+        $.get('http://127.0.0.1:3001/getHeroById', {
+            id
+        }, (res) => {
+            console.log(res);
+            if (res.code === 200) {
+                const renderTemplate = template('renderTemplate', res.data);
+                // console.log(renderTemplate);
+                $("#myform").html(renderTemplate);
+            }
+        })
+
+        //点击保存跟新数据
+        function renew() {
+            //获取英雄名字
+            const name = $("#heroName").val();
+            console.log(name);
+            //获取性别
+            const gender = $("input[name='gender']:checked").val();
+            console.log(gender);
+            //获取图片
+            const img = $("#photo").prop('src');
+            //更新数据的请求
+            $.post("http://127.0.0.1:3001/updateHero", {
+                id,
+                name,
+                gender,
+                img
+            }, (res) => {
+                console.log(res);
+                if (res.code === 200) {
+                    alert(res.msg);
+                    window.location.href = './index.html';
+                }
+            })
+        }
+
+        // 上传图片
+        function addFile() {
+            //获取图片
+            const file = $("#fileImg")[0].files[0];
+            console.log(file);
+            //创建formData对象
+            const formdata = new FormData();
+            //添加属性
+            formdata.append('avatar', file);
+            //发送请求
+            $.post({
+                url: 'http://127.0.0.1:3001/uploadFile',
+                data: formdata,
+                contentType: false,
+                processData: false,
+                success: (res) => {
+                    console.log(res);
+                    if (res.code === 0) {
+                        //把照片添加到img里面
+                        const addImg = 'http://127.0.0.1:3001/' + res.src;
+                        $("#photo").prop('src', addImg);
+                    }
+                },
+                dataType: 'json'
+            })
+
+        }
+    </script>
+</head>
+
+<body>
+    <header>
+        <div class="page-header container">
+            <h1>王者荣耀 <small>英雄管理器</small></h1>
+        </div>
+    </header>
+    <div class="container hero-list">
+        <form id='myform'>
+        </form>
+    </div>
+</body>
+
+</html>
